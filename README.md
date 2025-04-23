@@ -1,2 +1,2 @@
 # WebMentor
-WebMentor is a user-friendly learning management system that streamlines employee onboarding through customizable training programs, progress tracking, and analytics to accelerate new hire integration.?
+WebMentor is a user-friendly learning management system that streamlines employee onboarding through customizable training programs, progress tracking, and analytics to accelerate new hire integration.
