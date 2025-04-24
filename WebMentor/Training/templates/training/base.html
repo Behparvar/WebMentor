@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>WebMentor - {% block title %}آموزش{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://v1.fontapi.ir/css/Vazir" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazir', sans-serif; }
+        .dropdown-content { 
+            display: none; 
+            opacity: 0; 
+            transition: opacity 0.3s ease; 
+        }
+        .dropdown-content.show { 
+            display: block; 
+            opacity: 1; 
+        }
+        .progress-bar { 
+            transition: width 0.5s ease-in-out; 
+            background: linear-gradient(to right, #3b82f6, #60a5fa); 
+        }
+        .progress-container:hover .progress-tooltip { 
+            opacity: 1; 
+        }
+        .progress-tooltip { 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+        }
+        .category-button:hover { 
+            transform: translateX(-4px); 
+            transition: transform 0.2s; 
+        }
+        .content-card { 
+            transition: transform 0.3s, box-shadow 0.3s; 
+        }
+        .content-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); 
+        }
+        .video-player { 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar (نوار کناری سمت راست) -->
+        <aside class="w-72 bg-white shadow-sm p-6 overflow-y-auto">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">موضوعات آموزشی</h2>
+            <ul class="space-y-3">
+                {% for category in categories %}
+                <li>
+                    <button class="category-button w-full text-right py-3 px-5 bg-gray-100 hover:bg-gray-200 rounded-lg flex justify-between items-center {% if category.slug == request.resolver_match.kwargs.slug %}bg-blue-50 text-blue-600{% endif %}" onclick="toggleDropdown('dropdown-{{ category.id }}')">
+                        <span>{{ category.name }}</span>
+                        <svg class="w-5 h-5 transform transition-transform" id="arrow-{{ category.id }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <ul id="dropdown-{{ category.id }}" class="dropdown-content mt-2 space-y-2 pr-8">
+                        {% for content in category.trainingcontent_set.all %}
+                        <li>
+                            <a href="{% url 'category_detail' category.slug %}#content-{{ content.id }}" class="block py-2 px-5 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
+                                {{ content.title }}
+                            </a>
+                        </li>
+                        {% empty %}
+                        <li class="py-2 px-5 text-gray-400">محتوایی موجود نیست</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endfor %}
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 bg-gray-50">
+            <!-- Progress Bar and Search -->
+            <div class="flex items-center mb-8">
+                <div class="w-1/2 relative progress-container">
+                    <div class="bg-gray-200 h-3 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="progress-bar h-full" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-tooltip absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded">
+                        پیشرفت: <span id="progress-text">0%</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">پیشرفت شما</p>
+                </div>
+                <div class="w-1/2 pr-6">
+                    <div class="relative">
+                        <input type="text" id="search" class="w-full py-2.5 px-4 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white" placeholder="جستجو در محتواها...">
+                        <svg class="absolute right-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            {% if page_type == 'list' %}
+            <div class="text-center py-12 animate-fade-in">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">خوش آمدید به WebMentor</h1>
+                <p class="text-lg text-gray-600">برای شروع، از نوار کناری یک موضوع آموزشی انتخاب کنید.</p>
+            </div>
+            {% elif page_type == 'detail' %}
+            <h1 class="text-3xl font-bold text-gray-900 mb-8 animate-fade-in">{{ category.name }}</h1>
+            {% for content in contents %}
+            <div id="content-{{ content.id }}" class="content-card bg-white p-6 rounded-xl shadow-sm mb-8 animate-fade-in">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-3">{{ content.title }}</h2>
+                <p class="text-gray-600 mb-4 leading-relaxed">{{ content.description }}</p>
+                <video controls class="video-player w-full rounded-lg mb-4">
+                    <source src="{{ content.video_path }}" type="video/mp4">
+                    مرورگر شما از ویدیو پشتیبانی نمی‌کند.
+                </video>
+                {% if content.demo_link %}
+                <a href="{{ content.demo_link }}" class="inline-block bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all">رفتن به اتوماسیون دمو</a>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p class="text-gray-600 text-lg">هنوز محتوایی برای این دسته‌بندی اضافه نشده است.</p>
+            {% endfor %}
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        // Toggle Dropdown
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const arrow = document.getElementById(`arrow-${id.split('-')[1]}`);
+            dropdown.classList.toggle('show');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // Simulated Progress (برای دمو)
+        let progress = 0;
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        function updateProgress() {
+            progress = Math.min(progress + 10, 100);
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+        setInterval(updateProgress, 2000);
+
+        // Search Functionality (شبیه‌سازی)
+        document.getElementById('search').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            console.log(`جستجو برای: ${query}`);
+        });
+
+        // Fade-in Animation
+        document.querySelectorAll('.animate-fade-in').forEach(el => {
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = 1;
+            }, 100);
+        });
+    </script>
+</body>
+</html>
